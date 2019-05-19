@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace BluePsyduck\ZendAutoWireFactory\Exception;
 
-use ReflectionException;
 use Throwable;
 
 /**
@@ -13,7 +12,7 @@ use Throwable;
  * @author BluePsyduck <bluepsyduck@gmx.com>
  * @license http://opensource.org/licenses/GPL-3.0 GPL v3
  */
-class FailedReflectionException extends ReflectionException implements AutoWireException
+class FailedReflectionException extends AutoWireException
 {
     /**
      * The message template of the exception.

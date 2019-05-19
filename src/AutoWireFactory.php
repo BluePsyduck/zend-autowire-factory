@@ -7,8 +7,10 @@ namespace BluePsyduck\ZendAutoWireFactory;
 use BluePsyduck\ZendAutoWireFactory\Exception\AutoWireException;
 use BluePsyduck\ZendAutoWireFactory\Exception\FailedReflectionException;
 use BluePsyduck\ZendAutoWireFactory\Exception\NoParameterMatchException;
-use Psr\Container\ContainerInterface;
+use Interop\Container\ContainerInterface;
 use ReflectionException;
+use Zend\ServiceManager\Factory\AbstractFactoryInterface;
+use Zend\ServiceManager\Factory\FactoryInterface;
 
 /**
  * The factory auto-wiring the parameters of services.
@@ -16,13 +18,13 @@ use ReflectionException;
  * @author BluePsyduck <bluepsyduck@gmx.com>
  * @license http://opensource.org/licenses/GPL-3.0 GPL v3
  */
-class AutoWireFactory
+class AutoWireFactory implements FactoryInterface, AbstractFactoryInterface
 {
     /**
      * The parameter alias resolver.
      * @var ParameterAliasResolver
      */
-    private $parameterAliasResolver;
+    protected $parameterAliasResolver;
 
     /**
      * Sets the cache file to use.
@@ -45,10 +47,11 @@ class AutoWireFactory
      * Creates the service.
      * @param ContainerInterface $container
      * @param string $requestedName
+     * @param array|null $options
      * @return object
      * @throws AutoWireException
      */
-    public function __invoke(ContainerInterface $container, $requestedName)
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         try {
             $parameterAliases = $this->parameterAliasResolver->getParameterAliasesForConstructor($requestedName);
@@ -57,7 +60,7 @@ class AutoWireFactory
         }
 
         $parameters = $this->createParameterInstances($container, $requestedName, $parameterAliases);
-        return new $requestedName(...$parameters);
+        return $this->createInstance($requestedName, $parameters);
     }
 
     /**
@@ -68,7 +71,7 @@ class AutoWireFactory
      * @return array|object[]
      * @throws AutoWireException
      */
-    private function createParameterInstances(
+    protected function createParameterInstances(
         ContainerInterface $container,
         string $className,
         array $parameterAliases
@@ -89,7 +92,7 @@ class AutoWireFactory
      * @return mixed
      * @throws AutoWireException
      */
-    private function createInstanceOfFirstAvailableAlias(
+    protected function createInstanceOfFirstAvailableAlias(
         ContainerInterface $container,
         string $className,
         string $parameterName,
@@ -102,5 +105,68 @@ class AutoWireFactory
         }
 
         throw new NoParameterMatchException($className, $parameterName);
+    }
+
+    /**
+     * Creates the actual instance.
+     * @param string $className
+     * @param array $parameters
+     * @return mixed
+     */
+    protected function createInstance(string $className, array $parameters)
+    {
+        return new $className(...$parameters);
+    }
+
+    /**
+     * Returns whether the requested name can be auto-wired by this factory.
+     * @param ContainerInterface $container
+     * @param string $requestedName
+     * @return bool
+     */
+    public function canCreate(ContainerInterface $container, $requestedName)
+    {
+        $result = false;
+        if (class_exists($requestedName)) {
+            try {
+                $parameterAliases = $this->parameterAliasResolver->getParameterAliasesForConstructor($requestedName);
+                $result = $this->canAutoWire($container, $parameterAliases);
+            } catch (ReflectionException $e) {
+                $result = false;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Returns whether the parameter aliases can be auto wired.
+     * @param ContainerInterface $container
+     * @param array|string[][] $parameterAliases
+     * @return bool
+     */
+    protected function canAutoWire(ContainerInterface $container, array $parameterAliases): bool
+    {
+        foreach ($parameterAliases as $aliases) {
+            if (!$this->hasAnyAlias($container, $aliases)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns whether the container has any of the aliases.
+     * @param ContainerInterface $container
+     * @param array|string[] $aliases
+     * @return bool
+     */
+    protected function hasAnyAlias(ContainerInterface $container, array $aliases): bool
+    {
+        foreach ($aliases as $alias) {
+            if ($container->has($alias)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -20,13 +20,13 @@ class ParameterAliasResolver
      * The cache file path to use.
      * @var string|null
      */
-    private static $cacheFile = null;
+    protected static $cacheFile = null;
 
     /**
      * The already resolved parameter aliases.
      * @var array|string[][][]
      */
-    private static $parameterAliasesCache = [];
+    protected static $parameterAliasesCache = [];
 
     /**
      * Sets the cache file to use.
@@ -79,7 +79,7 @@ class ParameterAliasResolver
      * @return array|ReflectionParameter[]
      * @throws ReflectionException
      */
-    private function getReflectedParametersForConstructor(string $className): array
+    protected function getReflectedParametersForConstructor(string $className): array
     {
         $result = [];
         $reflectedClass = new ReflectionClass($className);
@@ -94,7 +94,7 @@ class ParameterAliasResolver
      * @param ReflectionParameter $parameter
      * @return array|string[]
      */
-    private function getAliasesForParameter(ReflectionParameter $parameter): array
+    protected function getAliasesForParameter(ReflectionParameter $parameter): array
     {
         $result = [];
 
@@ -112,7 +112,7 @@ class ParameterAliasResolver
     /**
      * Writes the current cache to the cache file, if set.
      */
-    private function writeCacheToFile(): void
+    protected function writeCacheToFile(): void
     {
         if (self::$cacheFile !== null) {
             file_put_contents(
