@@ -33,7 +33,9 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "BluePsyduckTest\\ZendAutoWireFactory\\": "test/src/"
+            "BluePsyduckIntegrationTest\\ZendAutoWireFactory\\": "test/integration/",
+            "BluePsyduckTest\\ZendAutoWireFactory\\": "test/src/",
+            "BluePsyduckTestAsset\\ZendAutoWireFactory\\": "test/asset/"
         }
     },
     "scripts": {
@@ -41,9 +43,11 @@
         "phpcbf": "phpcbf -p --colors",
         "phpcs": "phpcs -p --colors",
         "phpstan": "phpstan analyse --no-interaction --ansi",
-        "phpunit": "phpunit --colors=always --coverage-html=test/coverage --coverage-clover=test/coverage/clover.xml",
+        "test-unit": "phpunit --testsuite unit-test --colors=always --coverage-html=test/coverage --coverage-clover=test/coverage/clover.xml",
+        "test-integration": "phpunit --testsuite integration-test --colors=always",
         "test": [
-            "@phpunit",
+            "@test-unit",
+            "@test-integration",
             "@coverage-check",
             "@phpcs",
             "@phpstan"

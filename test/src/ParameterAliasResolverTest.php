@@ -6,6 +6,9 @@ namespace BluePsyduckTest\ZendAutoWireFactory;
 
 use BluePsyduck\TestHelper\ReflectionTrait;
 use BluePsyduck\ZendAutoWireFactory\ParameterAliasResolver;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithClassTypeHintConstructor;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithoutConstructor;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithParameterlessConstructor;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -226,6 +229,55 @@ class ParameterAliasResolverTest extends TestCase
                  );
 
         $result = $this->invokeMethod($resolver, 'resolveParameterAliasesForConstructor', $className);
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * Tests the getReflectedParametersForConstructor method.
+     * @throws ReflectionException
+     * @covers ::getReflectedParametersForConstructor
+     */
+    public function testGetReflectedParametersForConstructor(): void
+    {
+        $className = ClassWithClassTypeHintConstructor::class;
+
+        $resolver = new ParameterAliasResolver();
+        $result = $this->invokeMethod($resolver, 'getReflectedParametersForConstructor', $className);
+
+        $this->assertCount(2, $result);
+        $this->assertInstanceOf(ReflectionParameter::class, $result[0]);
+        $this->assertInstanceOf(ReflectionParameter::class, $result[1]);
+    }
+
+    /**
+     * Tests the getReflectedParametersForConstructor method.
+     * @throws ReflectionException
+     * @covers ::getReflectedParametersForConstructor
+     */
+    public function testGetReflectedParametersForConstructorWithoutConstructor(): void
+    {
+        $className = ClassWithoutConstructor::class;
+        $expectedResult = [];
+
+        $resolver = new ParameterAliasResolver();
+        $result = $this->invokeMethod($resolver, 'getReflectedParametersForConstructor', $className);
+
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * Tests the getReflectedParametersForConstructor method.
+     * @throws ReflectionException
+     * @covers ::getReflectedParametersForConstructor
+     */
+    public function testGetReflectedParametersForConstructorWithEmptyConstructor(): void
+    {
+        $className = ClassWithParameterlessConstructor::class;
+        $expectedResult = [];
+
+        $resolver = new ParameterAliasResolver();
+        $result = $this->invokeMethod($resolver, 'getReflectedParametersForConstructor', $className);
 
         $this->assertEquals($expectedResult, $result);
     }

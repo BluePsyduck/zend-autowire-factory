@@ -9,7 +9,11 @@ use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
 use BluePsyduck\ZendAutoWireFactory\Exception\FailedReflectionException;
 use BluePsyduck\ZendAutoWireFactory\Exception\NoParameterMatchException;
 use BluePsyduck\ZendAutoWireFactory\ParameterAliasResolver;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithClassTypeHintConstructor;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithoutConstructor;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithParameterlessConstructor;
 use Interop\Container\ContainerInterface;
+use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
@@ -41,6 +45,36 @@ class AutoWireFactoryTest extends TestCase
         parent::setUp();
 
         $this->parameterAliasResolver = $this->createMock(ParameterAliasResolver::class);
+    }
+
+    /**
+     * Tests the setCacheFile method.
+     * @throws ReflectionException
+     * @runInSeparateProcess // Unable to backup state of ParameterAliasResolver with @backupStaticAttributes
+     * @covers ::setCacheFile
+     */
+    public function testSetCacheFile(): void
+    {
+        $root = vfsStream::setup('root');
+        $root->addChild(vfsStream::newFile('cache-file'));
+
+        $cacheFile = vfsStream::url('root/cache-file');
+
+        $parameterAliasesCache = [
+            'abc' => [
+                'def' => ['ghi', 'jkl'],
+                'mno' => ['pqr', 'stu'],
+            ],
+            'vwx' => [],
+        ];
+        file_put_contents($cacheFile, sprintf('<?php return %s;', var_export($parameterAliasesCache, true)));
+
+        AutoWireFactory::setCacheFile($cacheFile);
+
+        $this->assertEquals(
+            $parameterAliasesCache,
+            $this->extractProperty(ParameterAliasResolver::class, 'parameterAliasesCache')
+        );
     }
 
     /**
@@ -271,6 +305,28 @@ class AutoWireFactoryTest extends TestCase
         );
 
         $this->assertEquals($instance, $result);
+    }
+
+    /**
+     * Tests the createInstance method.
+     * @throws ReflectionException
+     * @covers ::createInstance
+     */
+    public function testCreateInstance(): void
+    {
+        /* @var ClassWithoutConstructor&MockObject $foo */
+        $foo = $this->createMock(ClassWithoutConstructor::class);
+        /* @var ClassWithParameterlessConstructor&MockObject $bar */
+        $bar = $this->createMock(ClassWithParameterlessConstructor::class);
+
+        $className = ClassWithClassTypeHintConstructor::class;
+        $parameters = [$foo, $bar];
+        $expectedResult = new ClassWithClassTypeHintConstructor($foo, $bar);
+
+        $factory = new AutoWireFactory();
+        $result = $this->invokeMethod($factory, 'createInstance', $className, $parameters);
+
+        $this->assertEquals($expectedResult, $result);
     }
 
     /**
