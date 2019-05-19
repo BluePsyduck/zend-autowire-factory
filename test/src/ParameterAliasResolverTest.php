@@ -6,6 +6,7 @@ namespace BluePsyduckTest\ZendAutoWireFactory;
 
 use BluePsyduck\TestHelper\ReflectionTrait;
 use BluePsyduck\ZendAutoWireFactory\ParameterAliasResolver;
+use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -23,6 +24,71 @@ use ReflectionParameter;
 class ParameterAliasResolverTest extends TestCase
 {
     use ReflectionTrait;
+
+    /**
+     * Tests the setCacheFile method.
+     * @throws ReflectionException
+     * @backupStaticAttributes enabled
+     * @covers ::setCacheFile
+     */
+    public function testSetCacheFile(): void
+    {
+        $root = vfsStream::setup('root');
+        $root->addChild(vfsStream::newFile('cache-file'));
+
+        $cacheFile = vfsStream::url('root/cache-file');
+
+        $parameterAliasesCache = [
+            'abc' => [
+                'def' => ['ghi', 'jkl'],
+                'mno' => ['pqr', 'stu'],
+            ],
+            'vwx' => [],
+        ];
+        file_put_contents($cacheFile, sprintf('<?php return %s;', var_export($parameterAliasesCache, true)));
+
+        ParameterAliasResolver::setCacheFile($cacheFile);
+
+        $this->assertEquals(
+            $parameterAliasesCache,
+            $this->extractProperty(ParameterAliasResolver::class, 'parameterAliasesCache')
+        );
+    }
+
+    /**
+     * Tests the setCacheFile method.
+     * @throws ReflectionException
+     * @backupStaticAttributes enabled
+     * @covers ::setCacheFile
+     */
+    public function testSetCacheFileWithInvalidCache(): void
+    {
+        $root = vfsStream::setup('root');
+        $root->addChild(vfsStream::newFile('cache-file'));
+
+        $cacheFile = vfsStream::url('root/cache-file');
+        file_put_contents($cacheFile, sprintf('<?php return %s;', var_export('foo', true)));
+
+        ParameterAliasResolver::setCacheFile($cacheFile);
+
+        $this->assertEquals([], $this->extractProperty(ParameterAliasResolver::class, 'parameterAliasesCache'));
+    }
+
+    /**
+     * Tests the setCacheFile method.
+     * @throws ReflectionException
+     * @backupStaticAttributes enabled
+     * @covers ::setCacheFile
+     */
+    public function testSetCacheFileWithMissingFile(): void
+    {
+        vfsStream::setup('root');
+        $cacheFile = vfsStream::url('root/cache-file');
+
+        ParameterAliasResolver::setCacheFile($cacheFile);
+
+        $this->assertEquals([], $this->extractProperty(ParameterAliasResolver::class, 'parameterAliasesCache'));
+    }
 
     /**
      * Tests the getParameterAliasesForConstructor method.
@@ -268,4 +334,81 @@ class ParameterAliasResolverTest extends TestCase
         $this->assertEquals($expectedResult, $result);
     }
 
+    /**
+     * Tests the writeCacheToFile method.
+     * @throws ReflectionException
+     * @backupStaticAttributes enabled
+     * @covers ::writeCacheToFile
+     */
+    public function testWriteCacheToFile(): void
+    {
+        $root = vfsStream::setup('root');
+
+        $parameterAliasesCache = [
+            'abc' => [
+                'def' => ['ghi', 'jkl'],
+                'mno' => ['pqr', 'stu'],
+            ],
+            'vwx' => [],
+        ];
+        $cacheFile = vfsStream::url('root/cache-file');
+
+        $this->injectProperty(ParameterAliasResolver::class, 'cacheFile', $cacheFile);
+        $this->injectProperty(ParameterAliasResolver::class, 'parameterAliasesCache', $parameterAliasesCache);
+
+        $resolver = new ParameterAliasResolver();
+        $this->invokeMethod($resolver, 'writeCacheToFile');
+
+        $this->assertTrue($root->hasChild('cache-file'));
+
+        $cacheContents = require($cacheFile);
+        $this->assertEquals($parameterAliasesCache, $cacheContents);
+    }
+
+    /**
+     * Tests the writeCacheToFile method.
+     * @throws ReflectionException
+     * @backupStaticAttributes enabled
+     * @covers ::writeCacheToFile
+     */
+    public function testWriteCacheToFileWithExistingFile(): void
+    {
+        $root = vfsStream::setup('root');
+        $root->addChild(vfsStream::newFile('cache-file'));
+
+        $parameterAliasesCache = [
+            'abc' => [
+                'def' => ['ghi', 'jkl'],
+                'mno' => ['pqr', 'stu'],
+            ],
+            'vwx' => [],
+        ];
+        $cacheFile = vfsStream::url('root/cache-file');
+
+        $this->injectProperty(ParameterAliasResolver::class, 'cacheFile', $cacheFile);
+        $this->injectProperty(ParameterAliasResolver::class, 'parameterAliasesCache', $parameterAliasesCache);
+
+        $resolver = new ParameterAliasResolver();
+        $this->invokeMethod($resolver, 'writeCacheToFile');
+
+        $this->assertTrue($root->hasChild('cache-file'));
+
+        $cacheContents = require($cacheFile);
+        $this->assertEquals($parameterAliasesCache, $cacheContents);
+    }
+
+
+    /**
+     * Tests the writeCacheToFile method.
+     * @throws ReflectionException
+     * @backupStaticAttributes enabled
+     * @covers ::writeCacheToFile
+     */
+    public function testWriteCacheToFileWithoutCacheFile(): void
+    {
+        $resolver = new ParameterAliasResolver();
+        $this->invokeMethod($resolver, 'writeCacheToFile');
+
+        $this->expectNotToPerformAssertions();
+    }
 }
