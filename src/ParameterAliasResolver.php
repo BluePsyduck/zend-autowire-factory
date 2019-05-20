@@ -115,10 +115,8 @@ class ParameterAliasResolver
     protected function writeCacheToFile(): void
     {
         if (self::$cacheFile !== null) {
-            file_put_contents(
-                self::$cacheFile,
-                sprintf('<?php return %s;', var_export(self::$parameterAliasesCache, true))
-            );
+            $contents = sprintf('<?php return %s;', var_export(self::$parameterAliasesCache, true));
+            file_put_contents(self::$cacheFile, $contents);
         }
     }
 }
