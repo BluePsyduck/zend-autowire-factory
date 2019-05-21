@@ -72,3 +72,92 @@ e.g. in the `config/container.php` file:
 ```php
 \BluePsyduck\ZendAutoWireFactory\AutoWireFactory::setCacheFile('data/cache/autowire-factory.cache.php');
 ```
+
+## ConfigReaderFactory
+
+To help further with making self-written factories obsolete, the `ConfigReaderFactory` is able to provide values from
+the application config to the container to be e.g. used together with auto-wiring.
+
+### Usage
+
+The `ConfigReaderFactory` requires the application config to be added as array to the container. If the alias for the
+config differs from the default "config", call `ConfigReaderFactory::setDefaultConfigAlias('yourAlias')` to set the
+alias.
+
+Then, use the static `register(...$keys)` method to register a config value to the container.
+
+## Example
+
+The following example should show how to use both the `AutoWireFactory` and the `ConfigReaderFactory` to auto-wire a
+service class.
+
+Let's assume we have the following application config from which we want to take a value:
+
+```php
+[
+    'fancy-service' => [
+        'fancy-property' => 'Hello World!',
+    ],
+]
+``` 
+
+We want to auto-wire the following service class:
+
+```php
+class FancyService {
+    public function __construct(FancyComponent $component, string $fancyProperty) {
+    }
+}
+
+class FancyComponent {
+}
+```
+
+The following configuration can be used for the container without writing any factories:
+
+```php
+<?php 
+
+use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
+use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
+use Zend\ServiceManager\Factory\InvokableFactory;
+
+return [
+    'factories' => [
+        // Enable auto-wiring for the service itself.
+        FancyService::class => AutoWireFactory::class,
+        
+        // FancyComponent does not need any factory as it does not have a constructor.
+        // Both InvokableFactory and AutoWireFactory are usable here.
+        FancyComponent::class => InvokableFactory::class,
+        
+        // Enable the scalar property for auto-wiring into the service.
+        // In this example, the factory would fetch "Hello World!" from the config.
+        'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+    ],
+];
+```
+
+This configuration can be made even shorter if we use the `AutoWireFactory` as an abstract factory:
+
+```php
+<?php 
+
+use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
+use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
+
+return [
+    'abstract_factories' => [
+        // Will auto-wire everything possible to be auto-wired, in our case both FancyService and FancyComponent.
+        AutoWireFactory::class,
+    ],
+    'factories' => [
+        // Enable the scalar property for auto-wiring into the service.
+        // In this example, the factory would fetch "Hello World!" from the config.
+        'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+    ],
+];
+```
+
+Of course it is always possible to add a concrete factory to any service if auto-wiring is not possible due to more 
+complex initialization requirements.
