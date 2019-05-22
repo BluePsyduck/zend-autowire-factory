@@ -84,7 +84,9 @@ The `ConfigReaderFactory` requires the application config to be added as array t
 config differs from the default "config", call `ConfigReaderFactory::setDefaultConfigAlias('yourAlias')` to set the
 alias.
 
-Then, use the static `register(...$keys)` method to register a config value to the container.
+Then, use the static `register(...$keys)` method to register a config value to the container, where `$keys` are the
+array keys to reach your desired value in the config. Note that if a key is not set, an exception will be triggered
+by the factory.
 
 ## Example
 
@@ -123,17 +125,19 @@ use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
 use Zend\ServiceManager\Factory\InvokableFactory;
 
 return [
-    'factories' => [
-        // Enable auto-wiring for the service itself.
-        FancyService::class => AutoWireFactory::class,
-        
-        // FancyComponent does not need any factory as it does not have a constructor.
-        // Both InvokableFactory and AutoWireFactory are usable here.
-        FancyComponent::class => InvokableFactory::class,
-        
-        // Enable the scalar property for auto-wiring into the service.
-        // In this example, the factory would fetch "Hello World!" from the config.
-        'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+    'dependencies' => [
+        'factories' => [
+            // Enable auto-wiring for the service itself.
+            FancyService::class => AutoWireFactory::class,
+            
+            // FancyComponent does not need any factory as it does not have a constructor.
+            // Both InvokableFactory and AutoWireFactory are usable here.
+            FancyComponent::class => InvokableFactory::class,
+            
+            // Enable the scalar property for auto-wiring into the service.
+            // In this example, the factory would fetch "Hello World!" from the config.
+            'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+        ],
     ],
 ];
 ```
@@ -147,14 +151,16 @@ use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
 use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
 
 return [
-    'abstract_factories' => [
-        // Will auto-wire everything possible to be auto-wired, in our case both FancyService and FancyComponent.
-        AutoWireFactory::class,
-    ],
-    'factories' => [
-        // Enable the scalar property for auto-wiring into the service.
-        // In this example, the factory would fetch "Hello World!" from the config.
-        'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+    'dependencies' => [
+        'abstract_factories' => [
+            // Will auto-wire everything possible to be auto-wired, in our case both FancyService and FancyComponent.
+            AutoWireFactory::class,
+        ],
+        'factories' => [
+            // Enable the scalar property for auto-wiring into the service.
+            // In this example, the factory would fetch "Hello World!" from the config.
+            'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+        ],
     ],
 ];
 ```
