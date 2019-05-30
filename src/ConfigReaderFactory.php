@@ -50,10 +50,20 @@ class ConfigReaderFactory implements FactoryInterface
      */
     public static function register(string ...$keys): callable
     {
-        return function (ContainerInterface $container, $requestedName) use ($keys) {
-            $factory = new self(self::$defaultConfigAlias, $keys);
-            return $factory($container, $requestedName);
-        };
+        return new self(self::$defaultConfigAlias, $keys);
+    }
+
+    /**
+     * Sets the state of the factory on deserialization.
+     * @param array $array
+     * @return ConfigReaderFactory
+     */
+    public static function __set_state(array $array): ConfigReaderFactory
+    {
+        return new self(
+            $array['configAlias'] ?? self::$defaultConfigAlias,
+            $array['keys'] ?? []
+        );
     }
 
     /**

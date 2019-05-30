@@ -69,6 +69,41 @@ class ConfigReaderFactoryTest extends TestCase
     }
 
     /**
+     * Tests the __set_state method.
+     * @covers ::__set_state
+     */
+    public function testSetState(): void
+    {
+        $configAlias = 'abc';
+        $keys = ['def', 'ghi'];
+        $array = [
+            'configAlias' => $configAlias,
+            'keys' => $keys,
+        ];
+        $expectedResult = new ConfigReaderFactory($configAlias, $keys);
+
+        $result = ConfigReaderFactory::__set_state($array);
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
+     * Tests the __set_state method.
+     * @throws ReflectionException
+     * @throws ReflectionException
+     * @covers ::__set_state
+     */
+    public function testSetStateWithoutArray(): void
+    {
+        $defaultConfigAlias = 'abc';
+        $this->injectProperty(ConfigReaderFactory::class, 'defaultConfigAlias', $defaultConfigAlias);
+
+        $expectedResult = new ConfigReaderFactory($defaultConfigAlias, []);
+
+        $result = ConfigReaderFactory::__set_state([]);
+        $this->assertEquals($expectedResult, $result);
+    }
+
+    /**
      * Tests the constructing.
      * @throws ReflectionException
      * @covers ::__construct
