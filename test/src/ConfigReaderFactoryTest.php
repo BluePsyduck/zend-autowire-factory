@@ -24,48 +24,19 @@ class ConfigReaderFactoryTest extends TestCase
     use ReflectionTrait;
 
     /**
-     * Tests the setDefaultConfigAlias method.
+     * Tests the setConfigAlias method.
      * @throws ReflectionException
-     * @covers ::setDefaultConfigAlias
+     * @covers ::setConfigAlias
      * @runInSeparateProcess
      */
-    public function testSetDefaultConfigAlias(): void
+    public function testSetConfigAlias(): void
     {
         $configAlias = 'abc';
 
-        $this->assertSame('config', $this->extractProperty(ConfigReaderFactory::class, 'defaultConfigAlias'));
+        $this->assertSame('config', $this->extractProperty(ConfigReaderFactory::class, 'configAlias'));
 
-        ConfigReaderFactory::setDefaultConfigAlias($configAlias);
-        $this->assertSame($configAlias, $this->extractProperty(ConfigReaderFactory::class, 'defaultConfigAlias'));
-    }
-
-    /**
-     * Tests the register method.
-     * @throws ReflectionException
-     * @covers ::register
-     */
-    public function testRegister(): void
-    {
-        $requestedName = 'def';
-        $config = [
-            'ghi' => [
-                'jkl' => 'mno',
-            ],
-        ];
-        $keys = ['ghi', 'jkl'];
-        $expectedResult = 'mno';
-
-        /* @var ContainerInterface&MockObject $container */
-        $container = $this->createMock(ContainerInterface::class);
-        $container->expects($this->once())
-                  ->method('get')
-                  ->with($this->identicalTo('config'))
-                  ->willReturn($config);
-
-        $callback = ConfigReaderFactory::register(...$keys);
-        $result = $callback($container, $requestedName);
-
-        $this->assertSame($expectedResult, $result);
+        ConfigReaderFactory::setConfigAlias($configAlias);
+        $this->assertSame($configAlias, $this->extractProperty(ConfigReaderFactory::class, 'configAlias'));
     }
 
     /**
@@ -74,13 +45,10 @@ class ConfigReaderFactoryTest extends TestCase
      */
     public function testSetState(): void
     {
-        $configAlias = 'abc';
-        $keys = ['def', 'ghi'];
         $array = [
-            'configAlias' => $configAlias,
-            'keys' => $keys,
+            'keys' => ['abc', 'def'],
         ];
-        $expectedResult = new ConfigReaderFactory($configAlias, $keys);
+        $expectedResult = new ConfigReaderFactory('abc', 'def');
 
         $result = ConfigReaderFactory::__set_state($array);
         $this->assertEquals($expectedResult, $result);
@@ -88,16 +56,11 @@ class ConfigReaderFactoryTest extends TestCase
 
     /**
      * Tests the __set_state method.
-     * @throws ReflectionException
-     * @throws ReflectionException
      * @covers ::__set_state
      */
     public function testSetStateWithoutArray(): void
     {
-        $defaultConfigAlias = 'abc';
-        $this->injectProperty(ConfigReaderFactory::class, 'defaultConfigAlias', $defaultConfigAlias);
-
-        $expectedResult = new ConfigReaderFactory($defaultConfigAlias, []);
+        $expectedResult = new ConfigReaderFactory();
 
         $result = ConfigReaderFactory::__set_state([]);
         $this->assertEquals($expectedResult, $result);
@@ -110,13 +73,10 @@ class ConfigReaderFactoryTest extends TestCase
      */
     public function testConstruct(): void
     {
-        $configAlias = 'abc';
-        $keys = ['def', 'ghi'];
+        $expectedKeys = ['abc', 'def'];
+        $factory = new ConfigReaderFactory('abc', 'def');
 
-        $factory = new ConfigReaderFactory($configAlias, $keys);
-
-        $this->assertSame($configAlias, $this->extractProperty($factory, 'configAlias'));
-        $this->assertSame($keys, $this->extractProperty($factory, 'keys'));
+        $this->assertSame($expectedKeys, $this->extractProperty($factory, 'keys'));
     }
 
     /**
@@ -136,6 +96,8 @@ class ConfigReaderFactoryTest extends TestCase
         $keys = ['ghi', 'jkl'];
         $expectedResult = 'mno';
 
+        ConfigReaderFactory::setConfigAlias($configAlias);
+
         /* @var ContainerInterface&MockObject $container */
         $container = $this->createMock(ContainerInterface::class);
         $container->expects($this->once())
@@ -143,7 +105,7 @@ class ConfigReaderFactoryTest extends TestCase
                   ->with($this->identicalTo($configAlias))
                   ->willReturn($config);
 
-        $factory = new ConfigReaderFactory($configAlias, $keys);
+        $factory = new ConfigReaderFactory(...$keys);
         $result = $factory($container, $requestedName);
 
         $this->assertSame($expectedResult, $result);
@@ -172,7 +134,7 @@ class ConfigReaderFactoryTest extends TestCase
 
         $this->expectException(MissingConfigException::class);
 
-        $factory = new ConfigReaderFactory($configAlias, $keys);
+        $factory = new ConfigReaderFactory(...$keys);
         $factory($container, $requestedName);
     }
 
@@ -201,7 +163,7 @@ class ConfigReaderFactoryTest extends TestCase
 
         $this->expectException(MissingConfigException::class);
 
-        $factory = new ConfigReaderFactory($configAlias, $keys);
+        $factory = new ConfigReaderFactory(...$keys);
         $factory($container, $requestedName);
     }
 }

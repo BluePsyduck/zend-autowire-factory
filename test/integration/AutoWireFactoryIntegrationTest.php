@@ -46,6 +46,7 @@ class AutoWireFactoryIntegrationTest extends TestCase
         $config = new Config([
             'services' => [
                 'string $property' => 'abc',
+                'array $instances' => ['def', 'ghi'],
             ],
             'factories' => [
                 ClassWithClassTypeHintConstructor::class => AutoWireFactory::class,
@@ -83,6 +84,7 @@ class AutoWireFactoryIntegrationTest extends TestCase
         $config = new Config([
             'services' => [
                 'string $property' => 'abc',
+                'array $instances' => ['def', 'ghi'],
             ],
             'abstract_factories' => [
                 AutoWireFactory::class,

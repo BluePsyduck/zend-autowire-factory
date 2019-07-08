@@ -12,11 +12,12 @@ namespace BluePsyduckTestAsset\ZendAutoWireFactory;
  */
 class ClassWithScalarTypeHintConstructor
 {
-    public $foo;
+    public $property;
+    public $instances;
 
-    public function __construct(string $property)
+    public function __construct(string $property, array $instances)
     {
-        $this->foo = new ClassWithParameterlessConstructor();
-        $this->foo->property = $property;
+        $this->property = $property;
+        $this->instances = $instances;
     }
 }

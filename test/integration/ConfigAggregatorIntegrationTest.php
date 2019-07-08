@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace BluePsyduckIntegrationTest\ZendAutoWireFactory;
 
 use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
-use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
+use function BluePsyduck\ZendAutoWireFactory\injectAliasArray;
+use function BluePsyduck\ZendAutoWireFactory\readConfig;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithoutConstructor;
+use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithParameterlessConstructor;
 use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithScalarTypeHintConstructor;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
@@ -32,12 +35,20 @@ class ConfigAggregatorIntegrationTest extends TestCase
                 ConfigAggregator::ENABLE_CACHE => true,
                 'dependencies' => [
                     'factories' => [
+                        ClassWithoutConstructor::class => AutoWireFactory::class,
+                        ClassWithParameterlessConstructor::class => AutoWireFactory::class,
                         ClassWithScalarTypeHintConstructor::class => AutoWireFactory::class,
-                        'string $property' => ConfigReaderFactory::register('foo', 'bar'),
+
+                        'string $property' => readConfig('foo', 'bar'),
+                        'array $instances' => injectAliasArray('foo', 'baz'),
                     ],
                 ],
                 'foo' => [
                     'bar' => 'abc',
+                    'baz' => [
+                        ClassWithoutConstructor::class,
+                        ClassWithParameterlessConstructor::class,
+                    ],
                 ],
             ];
         };
@@ -63,7 +74,10 @@ class ConfigAggregatorIntegrationTest extends TestCase
      */
     public function testCaching(): void
     {
-        $expectedInstance = new ClassWithScalarTypeHintConstructor('abc');
+        $expectedInstance = new ClassWithScalarTypeHintConstructor(
+            'abc',
+            [new ClassWithoutConstructor(), new ClassWithParameterlessConstructor()]
+        );
 
         $root = vfsStream::setup('root');
         $cacheFile = vfsStream::url('root/config-cache.php');

@@ -17,16 +17,10 @@ use Zend\ServiceManager\Factory\FactoryInterface;
 class ConfigReaderFactory implements FactoryInterface
 {
     /**
-     * The default config alias to use when calling the register() method.
+     * The alias with which the application config is registered to the container.
      * @var string
      */
-    protected static $defaultConfigAlias = 'config';
-
-    /**
-     * The alias used for the config.
-     * @var string
-     */
-    protected $configAlias;
+    protected static $configAlias = 'config';
 
     /**
      * The keys of the config.
@@ -35,45 +29,32 @@ class ConfigReaderFactory implements FactoryInterface
     protected $keys;
 
     /**
-     * Sets the default config alias to use when calling the register() method.
-     * @param string $defaultConfigAlias
+     * Sets alias with which the application config is registered to the container.
+     * @param string $configAlias
      */
-    public static function setDefaultConfigAlias(string $defaultConfigAlias): void
+    public static function setConfigAlias(string $configAlias): void
     {
-        self::$defaultConfigAlias = $defaultConfigAlias;
-    }
-
-    /**
-     * Registers an instance of the factory to the container.
-     * @param string ...$keys
-     * @return callable
-     */
-    public static function register(string ...$keys): callable
-    {
-        return new self(self::$defaultConfigAlias, $keys);
+        self::$configAlias = $configAlias;
     }
 
     /**
      * Sets the state of the factory on deserialization.
      * @param array $array
-     * @return ConfigReaderFactory
+     * @return self
      */
-    public static function __set_state(array $array): ConfigReaderFactory
+    public static function __set_state(array $array): self
     {
         return new self(
-            $array['configAlias'] ?? self::$defaultConfigAlias,
-            $array['keys'] ?? []
+            ...($array['keys'] ?? [])
         );
     }
 
     /**
      * Initializes the factory.
-     * @param string $configAlias
-     * @param array $keys
+     * @param string ...$keys
      */
-    public function __construct(string $configAlias, array $keys)
+    public function __construct(string ...$keys)
     {
-        $this->configAlias = $configAlias;
         $this->keys = $keys;
     }
 
@@ -87,7 +68,7 @@ class ConfigReaderFactory implements FactoryInterface
      */
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        $result = $container->get($this->configAlias);
+        $result = $container->get(self::$configAlias);
         foreach ($this->keys as $key) {
             if (!is_array($result) || !array_key_exists($key, $result)) {
                 throw new MissingConfigException($this->keys);

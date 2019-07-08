@@ -81,12 +81,21 @@ the application config to the container to be e.g. used together with auto-wirin
 ### Usage
 
 The `ConfigReaderFactory` requires the application config to be added as array to the container. If the alias for the
-config differs from the default "config", call `ConfigReaderFactory::setDefaultConfigAlias('yourAlias')` to set the
+config differs from the default "config", call `ConfigReaderFactory::setConfigAlias('yourAlias')` to set the
 alias.
 
-Then, use the static `register(...$keys)` method to register a config value to the container, where `$keys` are the
-array keys to reach your desired value in the config. Note that if a key is not set, an exception will be triggered
-by the factory.
+Then, use the `readConfig(string ...$keys)` function (or `new ConfigReaderFactory(string ...$keys)`) to read a config 
+value for the container, where `$keys` are the array keys to reach your desired value in the config. Note that if a key 
+is not set, an exception will be triggered by the factory.
+
+## AliasArrayInjectorFactory
+
+The `AliasArrayInjectorFactory` reads an array of aliases from the config (using the `ConfigReaderFactory`), and creates
+all instances to these aliases and returns them to be injected into other services. All aliases must be known to the 
+container.
+
+To use this factory, simply call `injectAliasArray(string ...$configKeys)` (or 
+`new AliasArrayInjectorFactory(string ...$configKeys)`) within the container config. 
 
 ## Example
 
@@ -99,6 +108,10 @@ Let's assume we have the following application config from which we want to take
 [
     'fancy-service' => [
         'fancy-property' => 'Hello World!',
+        'fancy-adapters' => [
+            FancyAdapterAlpha::class,
+            FancyAdapterOmega::class,
+        ],
     ],
 ]
 ``` 
@@ -107,12 +120,13 @@ We want to auto-wire the following service class:
 
 ```php
 class FancyService {
-    public function __construct(FancyComponent $component, string $fancyProperty) {
+    public function __construct(FancyComponent $component, string $fancyProperty, array $fancyAdapters) {
     }
 }
 
-class FancyComponent {
-}
+class FancyComponent {}
+class FancyAdapterAlpha {}
+class FancyAdapterOmega {}
 ```
 
 The following configuration can be used for the container without writing any factories:
@@ -121,8 +135,9 @@ The following configuration can be used for the container without writing any fa
 <?php 
 
 use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
-use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
 use Zend\ServiceManager\Factory\InvokableFactory;
+use function BluePsyduck\ZendAutoWireFactory\injectAliasArray;
+use function BluePsyduck\ZendAutoWireFactory\readConfig;
 
 return [
     'dependencies' => [
@@ -133,10 +148,16 @@ return [
             // FancyComponent does not need any factory as it does not have a constructor.
             // Both InvokableFactory and AutoWireFactory are usable here.
             FancyComponent::class => InvokableFactory::class,
+            FancyAdapterAlpha::class => InvokableFactory::class,
+            FancyAdapterOmega::class => InvokableFactory::class,
             
             // Enable the scalar property for auto-wiring into the service.
             // In this example, the factory would fetch "Hello World!" from the config.
-            'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+            'string $fancyProperty' => readConfig('fancy-service', 'fancy-property'),
+            
+            // Inject an array of other services through their aliases into the service.
+            // In this example, instances of FancyAdapterAlpha and FancyAdapterOmega would be injected. 
+            'array $fancyAdapters' => injectAliasArray('fancy-service', 'fancy-adapters'),
         ],
     ],
 ];
@@ -148,7 +169,8 @@ This configuration can be made even shorter if we use the `AutoWireFactory` as a
 <?php 
 
 use BluePsyduck\ZendAutoWireFactory\AutoWireFactory;
-use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
+use function BluePsyduck\ZendAutoWireFactory\injectAliasArray;
+use function BluePsyduck\ZendAutoWireFactory\readConfig;
 
 return [
     'dependencies' => [
@@ -157,9 +179,9 @@ return [
             AutoWireFactory::class,
         ],
         'factories' => [
-            // Enable the scalar property for auto-wiring into the service.
-            // In this example, the factory would fetch "Hello World!" from the config.
-            'string $fancyProperty' => ConfigReaderFactory::register('fancy-service', 'fancy-property'),
+            // Any aliases using property names cannot be handled by the AutoWireFactory and must still get listed.
+            'string $fancyProperty' => readConfig('fancy-service', 'fancy-property'),
+            'array $fancyAdapters' => injectAliasArray('fancy-service', 'fancy-adapters'),
         ],
     ],
 ];

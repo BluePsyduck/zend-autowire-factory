@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BluePsyduckIntegrationTest\ZendAutoWireFactory;
 
-use BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory;
 use BluePsyduck\ZendAutoWireFactory\Exception\MissingConfigException;
+use function BluePsyduck\ZendAutoWireFactory\readConfig;
 use Interop\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Zend\ServiceManager\ServiceManager;
@@ -15,7 +15,6 @@ use Zend\ServiceManager\ServiceManager;
  *
  * @author BluePsyduck <bluepsyduck@gmx.com>
  * @license http://opensource.org/licenses/GPL-3.0 GPL v3
- * @coversDefaultClass \BluePsyduck\ZendAutoWireFactory\ConfigReaderFactory
  */
 class ConfigReaderFactoryIntegrationTest extends TestCase
 {
@@ -40,10 +39,10 @@ class ConfigReaderFactoryIntegrationTest extends TestCase
     }
 
     /**
-     * Provides the data for the configReaderFactory test.
+     * Provides the data for the readConfigFactory test.
      * @return array
      */
-    public function provideConfigReaderFactory(): array
+    public function provideReadConfigFactory(): array
     {
         return [
             [['abc', 'def'], 'ghi'],
@@ -54,31 +53,31 @@ class ConfigReaderFactoryIntegrationTest extends TestCase
     }
 
     /**
-     * Tests the ConfigReaderFactory class.
+     * Tests the readConfig function.
      * @param array $keys
      * @param mixed $expectedResult
-     * @dataProvider provideConfigReaderFactory
+     * @dataProvider provideReadConfigFactory
      */
-    public function testConfigReaderFactory(array $keys, $expectedResult): void
+    public function testReadConfig(array $keys, $expectedResult): void
     {
         $container = $this->createContainerWithConfig();
 
-        $callable = ConfigReaderFactory::register(...$keys);
+        $callable = readConfig(...$keys);
         $result = $callable($container, 'foo');
 
         $this->assertSame($expectedResult, $result);
     }
 
     /**
-     * Tests the ConfigReaderFactory class.
+     * Tests the readConfig function.
      */
-    public function testConfigReaderFactoryWithException(): void
+    public function testReadConfigWithException(): void
     {
         $container = $this->createContainerWithConfig();
 
         $this->expectException(MissingConfigException::class);
 
-        $callable = ConfigReaderFactory::register('abc', 'foo', 'bar');
+        $callable = readConfig('abc', 'foo', 'bar');
         $callable($container, 'foo');
     }
 }
