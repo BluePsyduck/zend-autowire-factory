@@ -10,7 +10,6 @@ use function BluePsyduck\ZendAutoWireFactory\readConfig;
 use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithoutConstructor;
 use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithParameterlessConstructor;
 use BluePsyduckTestAsset\ZendAutoWireFactory\ClassWithScalarTypeHintConstructor;
-use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 use Zend\ConfigAggregator\ConfigAggregator;
 use Zend\ServiceManager\Config;
@@ -79,11 +78,13 @@ class ConfigAggregatorIntegrationTest extends TestCase
             [new ClassWithoutConstructor(), new ClassWithParameterlessConstructor()]
         );
 
-        $root = vfsStream::setup('root');
-        $cacheFile = vfsStream::url('root/config-cache.php');
+        $cacheFile = sys_get_temp_dir() . '/config-cache.test.php';
+        if (file_exists($cacheFile)) {
+            unlink($cacheFile);
+        }
 
         // Do all steps without a cached config.
-        $this->assertFalse($root->hasChild('config-cache.php'));
+        $this->assertFalse(file_exists($cacheFile));
         $configAggregator = new ConfigAggregator([$this->getConfigProvider()], $cacheFile);
         $configWithoutCache = $configAggregator->getMergedConfig();
         $serviceManager = $this->createServiceManagerWithConfig($configWithoutCache);
@@ -91,11 +92,13 @@ class ConfigAggregatorIntegrationTest extends TestCase
         $this->assertEquals($expectedInstance, $instance);
 
         // Redo all steps with the now-cached config.
-        $this->assertTrue($root->hasChild('config-cache.php'));
+        $this->assertTrue(file_exists($cacheFile));
         $configAggregator = new ConfigAggregator([], $cacheFile);
         $configWithCache = $configAggregator->getMergedConfig();
         $serviceManager = $this->createServiceManagerWithConfig($configWithCache);
         $instance = $serviceManager->get(ClassWithScalarTypeHintConstructor::class);
         $this->assertEquals($expectedInstance, $instance);
+
+        unlink($cacheFile);
     }
 }
