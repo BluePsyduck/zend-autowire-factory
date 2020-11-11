@@ -1,9 +1,16 @@
 # Zend Auto-Wire Factory
 
-[![Latest Stable Version](https://poser.pugx.org/bluepsyduck/zend-autowire-factory/v/stable)](https://packagist.org/packages/bluepsyduck/zend-autowire-factory) 
-[![License](https://poser.pugx.org/bluepsyduck/zend-autowire-factory/license)](https://packagist.org/packages/bluepsyduck/zend-autowire-factory) 
-[![Build Status](https://travis-ci.com/BluePsyduck/zend-autowire-factory.svg?branch=master)](https://travis-ci.com/BluePsyduck/zend-autowire-factory) 
-[![codecov](https://codecov.io/gh/bluepsyduck/zend-autowire-factory/branch/master/graph/badge.svg)](https://codecov.io/gh/bluepsyduck/zend-autowire-factory)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/BluePsyduck/zend-autowire-factory)](https://github.com/BluePsyduck/zend-autowire-factory/releases)
+[![GitHub](https://img.shields.io/github/license/BluePsyduck/zend-autowire-factory)](LICENSE.md)
+[![Codecov](https://img.shields.io/codecov/c/gh/BluePsyduck/zend-autowire-factory?logo=codecov)](https://codecov.io/gh/BluePsyduck/zend-autowire-factory)
+
+### DEPRECATED: Use package [bluepsyduck/laminas-autowire-factory](https://github.com/BluePsyduck/laminas-autowire-factory) instead.
+
+[bluepsyduck/laminas-autowire-factory](https://github.com/BluePsyduck/laminas-autowire-factory) contains the same 
+functionality as this package, with the only difference being the namespace. Except for the imports no changes are
+required.
+
+----
 
 This library provides few factories helping with auto-wiring service classes to make writing actual factories less
 common. 
